@@ -159,7 +159,8 @@ def run():
     cambio_secadores=0
     est_uni=[0,0] #estado de unidades = unidad 1, unidad 2
     est_pre=[0,0] #estado de presiones = hosp,tanque
-
+    time_unit=[0,0] #tiempo de unidades en segundos
+    
     MAX_MOTORS = 6
     MAX_SENS = 3
     data_temp_tl = 2
@@ -167,9 +168,6 @@ def run():
     temperaturas_monitoreo = [[[0 for _ in range(data_temp_tl)] for _ in range(MAX_SENS)] for _ in range(MAX_MOTORS)]
 
     #temperaturas_monitoreo[0][1][1] = estado  #### Ejemplo para asignar el estado del sensor 2 de la unidad 1
-
-    est_temp=[0,0]
-    time_unit=[0,0]
     
     while True:
         dir_modulo_485[1]=init_sec+f'{Sec_1 & 0XFFFF:02x}'+f'{Sec_2 & 0XFFFF:02x}'
