@@ -459,3 +459,10 @@ def obtener_menor_tiempo(tiempos: list[str],mod,f) -> int:
     if mod==2:
         t_menor = comparacion_2x2(tiempos.index(tiempos_ordenados[0]) + 1,tiempos.index(tiempos_ordenados[1]) + 1)
     return t_menor
+
+def obtener_segundos(tiempos: list[str]) -> int:
+    tiempos_ordenados = ordenar_tiempos_de_menor_a_mayor(tiempos)
+    if tiempos.index(tiempos_ordenados[0])==0:
+        return tiempos_ordenados[0],tiempos_ordenados[1]
+    else:
+        return tiempos_ordenados[1],tiempos_ordenados[0]

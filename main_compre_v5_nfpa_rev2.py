@@ -168,6 +168,9 @@ def run():
 
     #temperaturas_monitoreo[0][1][1] = estado  #### Ejemplo para asignar el estado del sensor 2 de la unidad 1
 
+    est_temp=[0,0]
+    time_unit=[0,0]
+    
     while True:
         dir_modulo_485[1]=init_sec+f'{Sec_1 & 0XFFFF:02x}'+f'{Sec_2 & 0XFFFF:02x}'
         dir_modulo_485[2]=init_mot+f'{Mot2[0] & 0XFFFF:02x}'+f'{Mot2[1] & 0XFFFF:02x}'
@@ -695,6 +698,10 @@ def run():
             alerta[14]=1 if punto_rocio>pt[22] and pt[8]==1 else 0
             alerta[15]=1 if mono>pt[23] and pt[9]==1 else 0
             
+            temperaturas_monitoreo[0][0][alerta[0]]
+            temperaturas_monitoreo[0][1][alerta[1]]
+            temperaturas_monitoreo[1][0][alerta[23]]
+            temperaturas_monitoreo[1][1][alerta[24]]
             if alerta[8]==1:
                 est_pre[0]=1
             if alerta[9]==1:
@@ -715,6 +722,9 @@ def run():
             #AH=1 if (alerta[8]==1 or alerta[9]==1) else 0
             if (refuerzo[0]==1 or refuerzo[1]==1):
                 AR=1
+            #tiempos en segundos de cada unidad
+            time_unit=display.obtener_segundos(hmi_time)
+            
             
             #Guardar historial de alertas
             for i in range(0,len(alerta)):
