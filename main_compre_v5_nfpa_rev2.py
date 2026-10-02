@@ -157,6 +157,7 @@ def run():
     man=[0,0]
     paro_motor=0
     cambio_secadores=0
+    
     while True:
         dir_modulo_485[1]=init_sec+f'{Sec_1 & 0XFFFF:02x}'+f'{Sec_2 & 0XFFFF:02x}'
         dir_modulo_485[2]=init_mot+f'{Mot2[0] & 0XFFFF:02x}'+f'{Mot2[1] & 0XFFFF:02x}'
