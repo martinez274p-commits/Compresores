@@ -157,7 +157,8 @@ def run():
     man=[0,0]
     paro_motor=0
     cambio_secadores=0
-    
+    est_uni=[0,0] #estado de unidades = unidad 1, unidad 2
+    est_pre=[0,0] #estado de presiones = hosp,tanque
     while True:
         dir_modulo_485[1]=init_sec+f'{Sec_1 & 0XFFFF:02x}'+f'{Sec_2 & 0XFFFF:02x}'
         dir_modulo_485[2]=init_mot+f'{Mot2[0] & 0XFFFF:02x}'+f'{Mot2[1] & 0XFFFF:02x}'
@@ -489,6 +490,7 @@ def run():
                     conta_ult[i]=conta[i]
                 if PIN[(i*5)+1]==1 and t_paro[i*2]==1 and t_paro[(i*2)+1]==1: # EM1==1 motor 1 activado 1 y 5 {"S1": 33, "EM1": 25, "AUTO": 4, "TEMP1": 32, "TEMP2": 35} 
                     display.write_HMI("set_image","gif",f"estado{i+1}","en_uso")
+                    est_uni[i]=1
                     if timing[0]==0: #EM1 contador unidad 1 activado
                         timing[0]=1
                         timing[1]=ticks_ms()
@@ -501,10 +503,13 @@ def run():
                     if PIN[i*5]==0 and PIN[(i*5)+2]==1 and t_paro[i*2]==1 and t_paro[(i*2)+1]==1: #S1=0 Motor normal ON_M1==1 motor 1 activado automatico 0 y 4, 2 y 6 
                             if f"M{i+1}" in mod_enviar:
                                 display.write_HMI("set_image","gif",f"estado{i+1}","en_esperav")
+                                est_uni[i]=3
                             else:
                                 display.write_HMI("set_image","gif",f"estado{i+1}","en_esperaa")
+                                est_uni[i]=2
                     else:
                             display.write_HMI("set_image","gif",f"estado{i+1}","fuera")
+                            est_uni[i]=0
             if data_valor[1]>(presiones[3]-(presiones[3]-pt[18])) and data_valor[1]<=presiones[3] and pt[14]==1: #presion 70 - 90, izquierda valor leido, derecha valor guardado 
                 START_UNI=1
                 #sleep_ms(retardo)
@@ -667,6 +672,8 @@ def run():
                     timer=ticks_ms()
             alerta[3]=1 if PIN[5]==1 and pt[1]==1 else 0 #sobrecarga m2
             alerta[2]=1 if PIN[0]==1 and pt[1]==1 else 0 #sobrecarga m1
+            est_uni[0]=4 if alerta[2]==1 else est_uni[0]
+            est_uni[1]=4 if alerta[3]==1 else est_uni[1]
             alerta[10]=1 if data_valor[1]<presiones[2] and pt[5]==1 else 0 #presion_tanque baja
             #print(alerta,data_valor,pt[5],presiones[2])
             alerta[11]=1 if data_valor[1]>=int(presiones[4]+15) and pt[5]==1 else 0 #presion_tanque alta
@@ -678,6 +685,21 @@ def run():
             alerta[24]=1 if PIN[9]==0 and pt[0]==1 else 0 #temp alta 2
             alerta[14]=1 if punto_rocio>pt[22] and pt[8]==1 else 0
             alerta[15]=1 if mono>pt[23] and pt[9]==1 else 0
+            
+            if alerta[8]==1:
+                est_pre[0]=1
+            if alerta[9]==1:
+                est_pre[0]=2
+            if alerta[8]==0 and alerta[9]==0:
+                est_pre[0]=0
+            
+            if alerta[10]==1:
+                est_pre[1]=1
+            if alerta[11]==1:
+                est_pre[1]=2
+            if alerta[10]==0 and alerta[11]==0:
+                est_pre[1]=0
+            
             #alerta[21]=0 if sec==0 else 0 #alerta secadores apagados
             #AC=1 if (alerta[0]==1 or alerta[1]==1 or alerta[2]==1) else 0
             AT=1 if (alerta[0]==1 or alerta[1]==1) else 0
