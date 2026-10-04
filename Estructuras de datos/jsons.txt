@@ -1,0 +1,37 @@
+Configs completas para compresor (ejemplo): 
+{
+    "init":{
+        "td":3,
+        "tc":"init",
+        "n_u":2,
+        "sec_typ":0,
+        "n_sens":2,
+        "sens_typ":0
+    },
+    "th":{
+        "td":3,
+        "tc":"th",
+        "out":[10,100],
+        "tank":[30,80,100],
+        "times":[30,20]
+    },
+    "sens":{
+        "td":3,
+        "tc":"sens",
+        "out":[100,4000,80],
+        "tank":[120,4100,90]
+    },
+    "alerts":{
+        "td":3,
+        "tc":"alert",
+        "sw":54655,
+        "alpha":2000,
+        "niv_seg":2001,
+        "HMI_f":2002,
+        "dat_m":61,
+        "pet_m":2003,
+        "pr_max":30,
+        "co_max":1000,
+        "comp_pt":[21,22]
+    }
+}

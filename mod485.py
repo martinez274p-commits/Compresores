@@ -82,3 +82,16 @@ def read_rs485(d,m,di):
         else:
             return 0,0,0,0,0,0
     return 0,0,0,0,0,0
+
+# Funciones para comuncacion con modulo MQTT
+def send_conf(packet):
+    uart.write(packet)
+
+def read_conf():
+    frame = uart.read()
+    print(f"Frame recibido (hex): {frame}")
+    if frame:
+        if int(frame[0])==0x7E:
+            print("[MQTT] - Recibido:",frame)
+            return frame
+    return bytes([])

@@ -3,6 +3,21 @@ def run():
     from time import sleep_ms, ticks_ms, ticks_diff
     import configuracion as display
     import math
+    import mod485
+    import app
+
+
+    MAX_MOTORS = 6
+    MAX_SENS = 3
+
+    '''
+    INIT_DATA
+    '''
+    n_units = 2             # Número de unidades en el compresor
+    typ_secadores = 0       # Tipo de secadores(0-Disecantes, 1-Refrigerativos)
+    n_sens_per_unit = 2     # Numero de sensores de temperatura por cada unidad
+    typ_sens = 0            # Tipo de sensores de temperatura (0-Digital, 1-Analogos)
+
     ventanas=0 #0 normal 1 presiones 2 sensores 3 unidades 4 historial
     config_value=0
     config_sen=0
@@ -166,10 +181,226 @@ def run():
     data_temp_tl = 2
 
     temperaturas_monitoreo = [[[0 for _ in range(data_temp_tl)] for _ in range(MAX_SENS)] for _ in range(MAX_MOTORS)]
+    #temperaturas_monitoreo[0][1][1] = estado  #### Ejemplo para asignar el estado del sensor 2 de la unidad 1 (reemplace 'estado' por el valor real)
 
-    #temperaturas_monitoreo[0][1][1] = estado  #### Ejemplo para asignar el estado del sensor 2 de la unidad 1
+    umbral_temperaturas_alta = [[0 for _ in range(MAX_SENS)] for _ in range(MAX_MOTORS)]
+    # umbral_temperaturas_alta[1][2] = temp_alta_sens3_u2   #### Ejemplo para asignar el limite en temperatura alta para el sensor 3 de la unidad 2 (reemplace 'temp_alta_sens3_u2' por el valor real)
+
+    adc_sens_temperatura = [[[0 for _ in range(3)] for _ in range(MAX_SENS)] for _ in range(MAX_MOTORS)]
+    # adc_sens_temperatura[2][1][1] = adc_max_sens2_u3 #### Ejemplo para asignar el valor adc maximo del sensor 2 de la unidad 3 (reemplace 'adc_max_sens2_u3' por el valor real)
     
+    # =========== ESTADOS DE CONEXION MQTT Y WIFI ============
+    lastGetConnSt = 0
+    timeIntervalGetConnSt = 5000
+    wifi_st = 3     # - WiFi: 0 -> Conectado  |  1 -> Desconectado  |  3 -> Apagado       |  2 -> AP o Punto de Acceso (¡No se usa aquí!)
+    mqtt_st = 3     # - MQTT: 0 -> Conectado  |  1 -> Desconectado  |  2 -> Reconectando  |  3 -> Apagado
+
     while True:
+
+        '''
+        Comunicacion con el modulo mqtt
+        '''
+        # ======== Solicita el estado de red del dispositivo mqtt =======
+        if ticks_diff(ticks_ms(), lastGetConnSt) > timeIntervalGetConnSt:
+            time_out=100
+            app.send_simple_command('red')
+            time_init=ticks_ms()
+            while ticks_diff(ticks_ms(),time_init)<time_out:
+                pass
+            lastGetConnSt = ticks_ms()
+            print("Verificacion de conexión ejecutada. \n")
+
+        if mod485.rs485_available():
+            print("Verificando mensajes entrantes...")
+            data_in = mod485.read_conf()
+            if data_in and data_in[0] == 0x7E:
+                comando = app.process_command(data_in)
+                if isinstance(comando, dict):
+                    tipo = comando.get('type')
+                    # ===== Ejecutar comando de buzzer ====
+                    if tipo == 'buzzer':
+                        '''
+                        Codigo que silencia al buzzer
+                        '''
+                        app.send_ack_nack(True)
+                        silencio=1
+                        buzz.value(1) #buzzer on
+                        sleep_ms(400)
+                        buzz.value(0) #buzzer off
+                        time_b2=ticks_ms()
+                        if cont_retar<1:
+                            cont_retar=cont_retar+1
+                        else:
+                            cont_retar=0
+                            for i in range(4,8): #retardos y respaldos
+                                alerta[i]=0
+                            alerta[12]=0 #retardo todas  las unidades encendidas
+                            alerta[13]=0 #retardo cambio de unidad
+                            AR=0
+                    elif tipo == 'red_st':
+                        '''
+                        Actualizar estado de comunicacion en el HMI donde:
+                            - WiFi: 0 -> Conectado  |  1 -> Desconectado  |  3 -> Apagado       |  2 -> AP o Punto de Acceso (¡No se usa aquí!)
+                            - MQTT: 0 -> Conectado  |  1 -> Desconectado  |  2 -> Reconectando  |  3 -> Apagado
+                        '''
+                        wifi_st, mqtt_st = ( comando['wifi'], comando['mqtt'] )
+                        estado_wif = ""
+                        estado_mqtt = ""
+                        match wifi_st:
+                            case 0:
+                                estado_wif = "Conectado"
+                            case 1:
+                                estado_wif = "Desconectado"
+                            case 3:
+                                estado_wif = "Apagado"
+                            case 2:
+                                estado_wif = "AP"
+                        match mqtt_st:
+                            case 0:
+                                estado_mqtt = "Conectado"
+                            case 1:
+                                estado_mqtt = "Desconectado"
+                            case 3:
+                                estado_mqtt = "Apagado"
+                            case 2:
+                                estado_mqtt = "Reconectando"
+                        print(f'Estado de conexión: [WiFi]-{estado_wif} | [MQTT] - {estado_mqtt}')
+                    elif tipo == 'get_data':
+                        '''
+                        Colocar código que envia datos de telemetria
+                        '''
+                        estados_unidad = [0]*MAX_MOTORS
+                        tiempos_work = [0]*MAX_MOTORS
+
+                        for i in range(n_units):
+                            estados_unidad[i] = est_uni[i]
+                            tiempos_work[i] = time_unit[i]
+
+                        secadores_estado = (sec[1] << 1) | sec[0]
+                        
+                        payload = app.build_comp_frame(
+                            p_out=data_valor[0],
+                            p_out_st=est_pre[0],
+                            p_tank=data_valor[1],
+                            p_tank_st=est_pre[1],
+                            p_rocio=punto_rocio,
+                            p_rocio_st=alerta[14],
+                            co_ppm=mono,
+                            co_ppm_st=alerta[15],
+                            unidad_st=estados_unidad,
+                            unidad_tmp=app.flatten(temperaturas_monitoreo),
+                            unidad_trb=tiempos_work,
+                            secador_st=secadores_estado
+                        )
+                        packet = app.build_packet(payload=payload)
+                        mod485.send_conf(packet)
+                    #### ==== Enviar Configuraciones ====
+                    elif tipo == 'get_config_init':
+                        '''
+                        Colocar codigo para enviar la configuracion de init
+                        '''
+                        payload = app.build_comp_init(
+                            n_unidades=n_units,
+                            typ_secadores=typ_secadores,
+                            typ_temp_sens=typ_sens,
+                            n_temp_sens=n_sens_per_unit
+                        )
+                        packet = app.build_packet(payload=payload)
+                        mod485.send_conf(packet)
+                    elif tipo == 'get_config_th':
+                        '''
+                        Colocar codigo para enviar la configuracion de umbrales
+                        '''
+                        temps_hig = app.flatten(umbral_temperaturas_alta)
+                        payload = app.build_comp_th(
+                            th_p_out=[presiones[0],presiones[1]],
+                            th_p_tank=[presiones[2], presiones[3], presiones[4]],
+                            time_ref=presiones[5],
+                            time_sil=presiones[6],
+                            temp_high=temps_hig
+                        )
+                        packet = app.build_packet(payload=payload)
+                        mod485.send_conf(packet)
+                    elif tipo == 'get_config_sensors':
+                        '''
+                        Colocar codigo para enviar la configuracion de sensores
+                        '''
+                        sensor_temp_adc = app.flatten(adc_sens_temperatura)
+                        payload = app.build_comp_sens(
+                            sensor_out= [sensores[0], sensores[1], sensores[2]],
+                            sensor_tank=[sensores[3], sensores[4], sensores[5]],
+                            sensor_temp=sensor_temp_adc
+                        )
+                        packet = app.build_packet(payload=payload)
+                        mod485.send_conf(packet)
+                    elif tipo == 'get_config_alerts':
+                        '''
+                        Colocar codigo para enviar la configuracion de alertas
+                        '''
+                        sw_alerts = app.pack_sw_bits(pt[0],pt[1],pt[2],pt[3],pt[4],pt[5],pt[6],pt[7],pt[8],pt[9],pt[10],pt[11],pt[12],pt[13],pt[14],pt[15])
+                        payload = app.build_comp_alerts(
+                            sw=sw_alerts,
+                            alpha=pt[16],
+                            niv_seg=pt[17],
+                            act_HMI=pt[18],
+                            dat_mod=pt[19], 
+                            pet_mod=pt[20],
+                            pt_max=pt[21],
+                            co_max=pt[22],
+                            comp_pt=[pt[23], pt[24]]
+                        )
+                        packet = app.build_packet(payload=payload)
+                        mod485.send_conf(packet)
+                    #### ==== Guardar Configuraciones ====
+                    elif tipo == 'cnf_th':
+                        '''
+                        Colocar codigo para guardar la configuracion de umbrales
+                        '''
+                        umbral_temperaturas_alta = comando["temp_high"]
+                        presiones[0], presiones[1]               = (comando["th_p_out"][0], comando["th_p_out"][1])
+                        presiones[2], presiones[3], presiones[4] = (comando["th_p_tank"][0], comando["th_p_tank"][1], comando["th_p_tank"][2])
+                        presiones[5] = comando["time_ref"]
+                        presiones[6] = comando["time_sil"]
+
+                        ## TODO: Implementar funcion para guardar parametros
+                        #app.send_ack_nack(True)
+                    elif tipo == 'cnf_sens':
+                        '''
+                        Colocar codigo para guardar la configuracion de sensores
+                        '''
+                        presiones[0], presiones[1], presiones[2] = (comando["sensor_out"][0], comando["sensor_out"][1], comando["sensor_out"][2]) 
+                        presiones[3], presiones[4], presiones[5] = (comando["sensor_tank"][0], comando["sensor_tank"][1], comando["sensor_tank"][2])
+                        adc_sens_temperatura = comando["sensor_temp"]
+                        ## TODO: Implementar funcion para guardar parametros
+
+                        #app.send_ack_nack(True)
+                    elif tipo == 'cnf_alerts':
+                        '''
+                        Colocar codigo para guardar la configuracion de alertas
+                        '''
+                        nuevos_valores_alerts = [*comando["sw_bits"], comando["alpha"], comando["niv_seg"], comando["act_HMI"], comando["dat_mod"], comando["pet_mod"], comando["pt_max"], comando["co_max"], *comando["comp_pt"]]
+                        pt[:] = nuevos_valores_alerts
+
+                        ## TODO: Implementar funcion de guardado/actualizacion de pt
+                        #app.send_ack_nack(True)
+                    #### ==== Notificar errores en la ejecución de acciones ====
+                    elif tipo == 'warning' or tipo == 'error':
+                        print(f"[{tipo.upper()}] - {comando.get('msg')}")
+                        app.send_ack_nack(False)
+                    else:
+                        print(f"Tipo de comando no manejado: {comando}")
+                        app.send_ack_nack(False)
+                else:
+                    print(f"Respuesta inesperada (no es dict): {comando}")
+            else:
+                print(f'Entrada desconocida: {data_in}')
+
+        ######### ===== Cuando se guarden nuevas configuraciones desde el HMI se debe enviar la nueva configuracion tal como se hace en los casos donde tipo == 'get_config_...' para que se apliquen tanto en el dispositivo como en la nube
+
+            
+            
+
+
         dir_modulo_485[1]=init_sec+f'{Sec_1 & 0XFFFF:02x}'+f'{Sec_2 & 0XFFFF:02x}'
         dir_modulo_485[2]=init_mot+f'{Mot2[0] & 0XFFFF:02x}'+f'{Mot2[1] & 0XFFFF:02x}'
         for i in range(0,2):
@@ -696,10 +927,10 @@ def run():
             alerta[14]=1 if punto_rocio>pt[22] and pt[8]==1 else 0
             alerta[15]=1 if mono>pt[23] and pt[9]==1 else 0
             
-            temperaturas_monitoreo[0][0][alerta[0]]
-            temperaturas_monitoreo[0][1][alerta[1]]
-            temperaturas_monitoreo[1][0][alerta[23]]
-            temperaturas_monitoreo[1][1][alerta[24]]
+            temperaturas_monitoreo[0][0][1] = alerta[0] 
+            temperaturas_monitoreo[0][1][1] = alerta[1] 
+            temperaturas_monitoreo[1][0][1] = alerta[23]
+            temperaturas_monitoreo[1][1][1] = alerta[24]
             if alerta[8]==1:
                 est_pre[0]=1
             if alerta[9]==1:
