@@ -197,7 +197,9 @@ def run():
     dir_wifi=["wifi_ok","wifi_no","wifi_off","wifi_off"]
     dir_mqtt=["data_ok","data_no","data_rec","data_off"]
     dir_inf=["ok","no","rec","off"]
-    inf_wifi=""
+    #time_unit=display.obtener_segundos(hmi_time)
+    #print(time_unit,hmi_time)
+    #sleep_ms(5000)
     while True:
 
         '''
@@ -249,8 +251,7 @@ def run():
                         wifi_st, mqtt_st = ( comando['wifi'], comando['mqtt'] )
                         estado_wif = ""
                         estado_mqtt = ""
-                        inf_wifi = ""
-                        match wifi_st:
+                        """match wifi_st:
                             case 0:
                                 estado_wif = "Conectado"
                             case 1:
@@ -268,14 +269,14 @@ def run():
                                 estado_mqtt = "Apagado"
                             case 2:
                                 estado_mqtt = "Reconectando"
-                        print(f'Estado de conexión: [WiFi]-{estado_wif} | [MQTT] - {estado_mqtt}')
+                        print(f'Estado de conexión: [WiFi]-{estado_wif} | [MQTT] - {estado_mqtt}')"""
                     elif tipo == 'get_data':
                         '''
                         Colocar código que envia datos de telemetria
                         '''
                         estados_unidad = [0]*MAX_MOTORS
                         tiempos_work = [0]*MAX_MOTORS
-
+                        #print(time_unit)
                         for i in range(n_units):
                             estados_unidad[i] = est_uni[i]
                             tiempos_work[i] = time_unit[i]
@@ -287,7 +288,7 @@ def run():
                             p_out_st=est_pre[0],
                             p_tank=data_valor[1],
                             p_tank_st=est_pre[1],
-                            p_rocio=punto_rocio,
+                            p_rocio=int(punto_rocio),
                             p_rocio_st=alerta[14],
                             co_ppm=mono,
                             co_ppm_st=alerta[15],
@@ -382,8 +383,8 @@ def run():
                         '''
                         Colocar codigo para guardar la configuracion de alertas
                         '''
-                        nuevos_valores_alerts = [*comando["sw_bits"], comando["alpha"], comando["niv_seg"], comando["act_HMI"], comando["dat_mod"], comando["pet_mod"], comando["pt_max"], comando["co_max"], *comando["comp_pt"]]
-                        pt[:] = nuevos_valores_alerts
+                        #nuevos_valores_alerts = [*comando["sw_bits"], comando["alpha"], comando["niv_seg"], comando["act_HMI"], comando["dat_mod"], comando["pet_mod"], comando["pt_max"], comando["co_max"], *comando["comp_pt"]]
+                        #pt[:] = nuevos_valores_alerts
 
                         ## TODO: Implementar funcion de guardado/actualizacion de pt
                         #app.send_ack_nack(True)
@@ -1047,4 +1048,4 @@ def run():
                     display.write_HMI("set_value","progress_bar",dir_roc[i],str(int(p_diff)))
                     #print("bar:",int(p_diff))
                 ciclo=0
-#run()
+run()

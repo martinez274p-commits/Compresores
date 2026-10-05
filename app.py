@@ -8,7 +8,7 @@ MOTORS_MAX = 6
 STX = 0x7E
 ver = 1
 typeM = 0
-deviceType = 5
+deviceType = 3
 ETX = 0x7F
 
 # Comandos (BYTE_COMMAND)

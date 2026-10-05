@@ -462,7 +462,11 @@ def obtener_menor_tiempo(tiempos: list[str],mod,f) -> int:
 
 def obtener_segundos(tiempos: list[str]) -> int:
     tiempos_ordenados = ordenar_tiempos_de_menor_a_mayor(tiempos)
+    tiempos_segundos = [0,0]
+    for i in range(2):
+        h,m,s = tiempos_ordenados[i].split(":")
+        tiempos_segundos[i] = int(h)*3600 + int(m)*60 + int(s)
     if tiempos.index(tiempos_ordenados[0])==0:
-        return tiempos_ordenados[0],tiempos_ordenados[1]
+        return tiempos_segundos[0],tiempos_segundos[1]
     else:
-        return tiempos_ordenados[1],tiempos_ordenados[0]
+        return tiempos_segundos[1],tiempos_segundos[0]
