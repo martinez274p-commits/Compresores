@@ -369,6 +369,7 @@ def run():
 
                         ## TODO: Implementar funcion para guardar parametros
                         #app.send_ack_nack(True)
+                        display.save_presiones(presiones)
                     elif tipo == 'cnf_sens':
                         '''
                         Colocar codigo para guardar la configuracion de sensores
@@ -377,8 +378,9 @@ def run():
                         presiones[3], presiones[4], presiones[5] = (comando["sensor_tank"][0], comando["sensor_tank"][1], comando["sensor_tank"][2])
                         adc_sens_temperatura = comando["sensor_temp"]
                         ## TODO: Implementar funcion para guardar parametros
-
+                        
                         #app.send_ack_nack(True)
+                        display.save_sensores(sensores)
                     elif tipo == 'cnf_alerts':
                         '''
                         Colocar codigo para guardar la configuracion de alertas
@@ -388,6 +390,8 @@ def run():
 
                         ## TODO: Implementar funcion de guardado/actualizacion de pt
                         #app.send_ack_nack(True)
+                        #cambiar alpha a float de 4 decimales
+                        display.guardar_par(pt)
                     #### ==== Notificar errores en la ejecución de acciones ====
                     elif tipo == 'warning' or tipo == 'error':
                         print(f"[{tipo.upper()}] - {comando.get('msg')}")

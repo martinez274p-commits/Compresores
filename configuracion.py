@@ -75,6 +75,9 @@ def guardar_secadores(a):
 def guardar_hex(a):
     return datos.guardar_hex(a)
 
+def guardar_par(pt):
+    return datos.guardar_parametros(pt)
+
 def write_HMI(a,b,c,d):
     display.write_HMI(str(a),str(b),str(c),str(d))
 
