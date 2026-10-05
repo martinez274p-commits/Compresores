@@ -6,13 +6,13 @@ class DATA:
         self.module=["","","","","","", 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
         self.calibracion=[0,0,0,0,0 ,0]
         self.vec_time=[0,0,0,0,0,0,0]
-        self.param=[0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0 ,0]
+        self.param=[0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0]
         self.dir_time=['h1','h2','h3','h4','h5','h6','h7']
         self.dir_pre=['PHB','PHA','PMT','PAT','PPT','REF','SIL']
         self.dir_sec=['SEC1','SEC2']
         self.dir_mod=['PR','M2','M3','M4','SC','MA','BR1','P1','RX1','TX1','TO1','BR2','P2','RX2','TX2','TO2','T1','T2','H1','H2','PR1','PR2']
         self.dir_sen=['min_1','max_1','val_1','min_2','max_2','val_2']
-        self.dir_par=['T','SA','R','REDA','PDS', 'PDT','RTUO','RCU','PDR','NDC', 'CDM','SS','AB','RDU','ADU', 'GH','PPT','A','NSA','ADH', 'REDM','TPM','PDRM','NDCM','CT','CH']     
+        self.dir_par=['T','SA','REDA','PDS','PDT', 'RTUO','RCU','PDR','NDC','CDM', 'SS','AB','RDU','ADU','GH', 'PPT','A','NSA','ADH','REDM', 'TPM','PDRM','NDCM','CT','CH']     
         self.i=0
     
     def guardar_hex(self,a):

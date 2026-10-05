@@ -31,7 +31,7 @@ def run():
     clav_m=["RSIIM","11231296","","","",""]
     verf=0
     Fecha=""
-    retardo=pt[20]
+    retardo=pt[19]
     rst=[0,0]
     pines = {"S1": 33, "EM1": 25, "AUTO": 4, "TEMP1": 32, "TEMP2": 35} 
     dir_pin = ["S1", "EM1", "AUTO", "TEMP1", "TEMP2"]
@@ -44,7 +44,7 @@ def run():
                 "Retardo, unidades encendidas","Retardo, Cambio de unidad","Punto de rocio alto","Alerta de CO",
                 "Punto de Rocio sin conexion","Modulo PR y CO sin conexion","Modulo M2 sin conexion","Modulo alarmas sin conexion",
                 "Mem_Ext sin conexion","Mem_SD no conectada","Modulo WiFi fallo","Falla termica scroll A","Falla termica scroll B"] #25
-    alpha=float(pt[17])#0.01#0.012
+    alpha=float(pt[16])#0.01#0.012
     adc_presion=[0,0]
     adc_filtrado=[0,0]
     alerta=     [0,0,0,0,0 ,0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0] #23 alertas
@@ -59,7 +59,7 @@ def run():
     Motor1=Pin(23,Pin.OUT)
     presiones=display.leer_presiones()
     sensores=display.leer_sensores()
-    time_disp=pt[19]
+    time_disp=pt[18]
     time_disp_ult=ticks_ms()
     time_peticion=ticks_ms()
     time_b2=ticks_ms()
@@ -408,7 +408,7 @@ def run():
             adc_filtrado[i]=(alpha*adc_presion[i])+((1-alpha)*adc_filtrado[i])
         PIN1 = [io[n].value() for n in dir_pin] #lectura de pines controlador
         PIN=PIN1+PIN2
-        if ticks_diff(ticks_ms(),time_peticion)>pt[21]:
+        if ticks_diff(ticks_ms(),time_peticion)>pt[20]:
             enviar=0
             if cambio_modulo==3: #modulo alarmas
                 rel=[AG,AR,AT,0,0, 0,0,0,0,0] #posiciones de rele izquierda - derecha -> Z
@@ -422,17 +422,17 @@ def run():
             time_peticion=ticks_ms()
             #print("enviar data",dat,dir_e,m_name)
             info_485=display.data_485(dat,dir_e,m_name,module)
-            #print("data",pt[10])
+            #print("data",pt[9])
             for i in range(len(name_modulo)):
-                if m_name==name_modulo[i] and info_485[0]==0 and pt[10]==1:
+                if m_name==name_modulo[i] and info_485[0]==0 and pt[9]==1:
                     alerta[i+16]=1
             if info_485[0]==1: #punto de rocio y co
                 #punto_rocio=info_485[1]
                 b1=243.04
                 a1=17.625
                 #print(info_485)
-                H=info_485[2]-pt[25]
-                T=info_485[3]-pt[24]
+                H=info_485[2]-pt[24]
+                T=info_485[3]-pt[23]
                 try:
                     punto_rocio=int(((b1*((math.log(H/100))+((a1*T)/(b1+T))))/(a1-math.log(H/100)-(a1*(T/(b1+T)))))*10)/10
                 except:
@@ -686,7 +686,7 @@ def run():
             #print("estado pin",PIN)
             
             t_paro=[PIN[3],PIN[4],PIN[8],PIN[9]] #0 alerta temp, 1 normal {"S1": 33, "EM1": 25, "AUTO": 4, "TEMP1": 32, "TEMP2": 35} 
-            if pt[16]==1:
+            if pt[15]==1:
                 for i in range(len(modos)):
                     modos[i]=1 if t_paro[i*2]==1 and t_paro[(i*2)+1]==1 and modos[i]==1 else 0
             else:
@@ -696,7 +696,7 @@ def run():
             else:
                 if START_UNI==1:
                     retar=0
-                    if pt[7]==1:
+                    if pt[6]==1:
                         alerta[13]=1 #retardo cambio de unidad
                     AR=1
                     cont_retar=0
@@ -751,7 +751,7 @@ def run():
                     else:
                             display.write_HMI("set_image","gif",f"estado{i+1}","fuera")
                             est_uni[i]=0
-            if data_valor[1]>(presiones[3]-(presiones[3]-pt[18])) and data_valor[1]<=presiones[3] and pt[14]==1: #presion 70 - 90, izquierda valor leido, derecha valor guardado 
+            if data_valor[1]>(presiones[3]-(presiones[3]-pt[17])) and data_valor[1]<=presiones[3] and pt[13]==1: #presion 70 - 90, izquierda valor leido, derecha valor guardado 
                 START_UNI=1
                 #sleep_ms(retardo)
                 #rs485_hum.send_data("3,ACT,1")
@@ -820,7 +820,7 @@ def run():
                                 elif cambio_motor==i+1:
                                     print(f"Unidad {i+1} no activado")
                                     init_arranque=0
-                                    if pt[3]==1:
+                                    if pt[2]==1:
                                         alerta[i+6]=1 #unidad 1 no activado 9
                                     timing[2]=0
                                     init_time[i]=0
@@ -840,7 +840,7 @@ def run():
                                 if f"M{i+1}" in mod_enviar and init_time[i]==0:
                                     print(f"Hey no activado M{i+1}")
                                     retar=0
-                                    if pt[3]==1:
+                                    if pt[2]==1:
                                         alerta[i+6]=1 #retardos de unidades no activadas
                                     cont_retar=0
                                     mod_env2=mod_enviar.replace(",1",",0")
@@ -892,14 +892,14 @@ def run():
                         START_UNI=0
                         verf2=0
                 #print("tiempos:",ticks_diff(ticks_ms(),timer),timer,timer_limit,mod_enviar)
-                if ticks_diff(ticks_ms(),timer)>timer_limit and verf1==1 and START_UNI==1 and pt[13]==1:
+                if ticks_diff(ticks_ms(),timer)>timer_limit and verf1==1 and START_UNI==1 and pt[12]==1:
                     if ref_cambio==cambio_motor:
                         pass
                     else:
                         ref_cambio=cambio_motor
                         refuerzo[cambio_motor-1]=1
-                        alerta[5]=1 if refuerzo[0]==1 and pt[2]==1 else 0
-                        alerta[4]=1 if refuerzo[1]==1 and pt[2]==1 else 0
+                        alerta[5]=1 if refuerzo[0]==1 else 0
+                        alerta[4]=1 if refuerzo[1]==1 else 0
                     c_m=display.operacion(modos,ref_cambio,1) #automatico,arranque,modo
                     #print("respaldo",c_m)
                     sleep_ms(retardo)
@@ -915,17 +915,17 @@ def run():
             alerta[2]=1 if PIN[0]==1 and pt[1]==1 else 0 #sobrecarga m1
             est_uni[0]=4 if alerta[2]==1 else est_uni[0]
             est_uni[1]=4 if alerta[3]==1 else est_uni[1]
-            alerta[10]=1 if data_valor[1]<presiones[2] and pt[5]==1 else 0 #presion_tanque baja
-            #print(alerta,data_valor,pt[5],presiones[2])
-            alerta[11]=1 if data_valor[1]>=int(presiones[4]+15) and pt[5]==1 else 0 #presion_tanque alta
-            alerta[8]=1 if data_valor[0]<=presiones[0] and pt[4]==1 else 0 #presion_salida baja
-            alerta[9]=1 if data_valor[0]>=presiones[1] and pt[4]==1 else 0 #presion_salida alta
+            alerta[10]=1 if data_valor[1]<presiones[2] and pt[4]==1 else 0 #presion_tanque baja
+            #print(alerta,data_valor,pt[4],presiones[2])
+            alerta[11]=1 if data_valor[1]>=int(presiones[4]+15) and pt[4]==1 else 0 #presion_tanque alta
+            alerta[8]=1 if data_valor[0]<=presiones[0] and pt[3]==1 else 0 #presion_salida baja
+            alerta[9]=1 if data_valor[0]>=presiones[1] and pt[3]==1 else 0 #presion_salida alta
             alerta[0]=1 if PIN[3]==0 and pt[0]==1 else 0 #temp alta 1
             alerta[1]=1 if PIN[4]==0 and pt[0]==1 else 0 #temp alta 1
             alerta[23]=1 if PIN[8]==0 and pt[0]==1 else 0 #temp alta 2 
             alerta[24]=1 if PIN[9]==0 and pt[0]==1 else 0 #temp alta 2
-            alerta[14]=1 if punto_rocio>pt[22] and pt[8]==1 else 0
-            alerta[15]=1 if mono>pt[23] and pt[9]==1 else 0
+            alerta[14]=1 if punto_rocio>pt[21] and pt[7]==1 else 0
+            alerta[15]=1 if mono>pt[22] and pt[8]==1 else 0
             
             temperaturas_monitoreo[0][0][1] = alerta[0] 
             temperaturas_monitoreo[0][1][1] = alerta[1] 
@@ -957,7 +957,7 @@ def run():
             
             #Guardar historial de alertas
             for i in range(0,len(alerta)):
-                if alerta[i]==1 and alerta_hist[i]==0 and pt[15]==1:
+                if alerta[i]==1 and alerta_hist[i]==0 and pt[14]==1:
                     alerta_hist[i]=1
                     print("alerta detectada...................")
                     try:
@@ -965,12 +965,12 @@ def run():
                         display.guardar_registro(str(date[1])+"  "+dir_alert[i])
                     except:
                         print("NONE")
-                if alerta[i]==0 and alerta_hist[i]==1 and pt[15]==1:
+                if alerta[i]==0 and alerta_hist[i]==1 and pt[14]==1:
                     alerta_hist[i]=0
                     
             if PIN[1]==1 and PIN[6]==1 and retar==0: #{"S1": 33, "EM1": 25, "AUTO": 4, "TEMP1": 32, "TEMP2": 35} 
                 retar=1
-                if pt[6]==1:
+                if pt[5]==1:
                     alerta[12]=1 #retardo ambas unidades
                 AR=1
                 cont_retar=0
@@ -980,7 +980,7 @@ def run():
             if any(x == 1 for x in alerta) or PIN[0]==1 or PIN[5]==1:
                 AG=1
                 if alerta!=alerta2:
-                    if pt[12]==1:
+                    if pt[11]==1:
                         buzzer=1
                     silencio=0
                     time_b=ticks_ms()
