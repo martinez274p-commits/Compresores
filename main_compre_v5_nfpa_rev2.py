@@ -195,7 +195,9 @@ def run():
     wifi_st = 3     # - WiFi: 0 -> Conectado  |  1 -> Desconectado  |  3 -> Apagado       |  2 -> AP o Punto de Acceso (¡No se usa aquí!)
     mqtt_st = 3     # - MQTT: 0 -> Conectado  |  1 -> Desconectado  |  2 -> Reconectando  |  3 -> Apagado
     dir_wifi=["wifi_ok","wifi_no","wifi_off","wifi_off"]
-    dir_mqtt=["data_ok","data_no","data_rec","data_no"]
+    dir_mqtt=["data_ok","data_no","data_rec","data_off"]
+    dir_inf=["ok","no","rec","off"]
+    inf_wifi=""
     while True:
 
         '''
@@ -247,6 +249,7 @@ def run():
                         wifi_st, mqtt_st = ( comando['wifi'], comando['mqtt'] )
                         estado_wif = ""
                         estado_mqtt = ""
+                        inf_wifi = ""
                         match wifi_st:
                             case 0:
                                 estado_wif = "Conectado"
@@ -676,6 +679,7 @@ def run():
         if ticks_diff(ticks_ms(),time_disp_ult)>time_disp:
             display.write_HMI("set_image","image","wifi",dir_wifi[wifi_st])
             display.write_HMI("set_image","image","mqtt",dir_mqtt[mqtt_st])
+            display.write_HMI("set_text","label","info_wifi","Mqtt:"+dir_inf[mqtt_st]+" Wifi:"+dir_inf[wifi_st])
             display.param_unidades(PIN,data_valor,hmi_time,ventanas,dat_rs,punto_rocio,mono,sec)
             if ventanas==2:
                 sensores=display.edit_sensores(sensores,dato,adc_filtrado,data_valor,config_value)
