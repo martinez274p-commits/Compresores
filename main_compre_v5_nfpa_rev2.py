@@ -343,9 +343,10 @@ def run():
                         Colocar codigo para enviar la configuracion de alertas
                         '''
                         sw_alerts = app.pack_sw_bits(pt[0],pt[1],pt[2],pt[3],pt[4],pt[5],pt[6],pt[7],pt[8],pt[9],pt[10],pt[11],pt[12],pt[13],pt[14],pt[15])
+                        alpha_i = int(round(pt[16]*10000))
                         payload = app.build_comp_alerts(
                             sw=sw_alerts,
-                            alpha=pt[16],
+                            alpha=alpha_i,
                             niv_seg=pt[17],
                             act_HMI=pt[18],
                             dat_mod=pt[19], 
@@ -385,6 +386,28 @@ def run():
                         '''
                         Colocar codigo para guardar la configuracion de alertas
                         '''
+                        index_pt = 0
+                        for _ in range(16):
+                            pt[index_pt] = comando["sw_bits"][index_pt]
+                            index_pt += 1
+                        pt[index_pt] = comando["alpha"] / 10000.0
+                        index_pt += 1
+                        pt[index_pt] = comando["niv_seg"]
+                        index_pt += 1
+                        pt[index_pt] = comando["act_HMI"]
+                        index_pt += 1
+                        pt[index_pt] = comando["dat_mod"]
+                        index_pt += 1
+                        pt[index_pt] = comando["pet_mod"]
+                        index_pt += 1
+                        pt[index_pt] = comando["pt_max"]
+                        index_pt += 1
+                        pt[index_pt] = comando["co_max"]
+                        index_pt += 1
+                        pt[index_pt] = comando["comp_pt"][0]
+                        index_pt += 1
+                        pt[index_pt] = comando["comp_pt"][1]
+                        
                         #nuevos_valores_alerts = [*comando["sw_bits"], comando["alpha"], comando["niv_seg"], comando["act_HMI"], comando["dat_mod"], comando["pet_mod"], comando["pt_max"], comando["co_max"], *comando["comp_pt"]]
                         #pt[:] = nuevos_valores_alerts
 

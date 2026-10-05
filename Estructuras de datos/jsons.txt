@@ -1,3 +1,101 @@
+========= Parametros de Telemetria del compresor =========
+{
+    "params": [out,tank,rocio,co],                        // Pámetros de presion de Salida (out), presion en el tanque (tank), Punto de rocio (rocio) y Monoxido de carbono (co)
+    "u_st": [st_1,st_2,...,st_n],                         // Estado de las unidades (motores) 0-Normal, 1-En uso, 2-En espera (amarillo), 3-En espera (verde)
+    "tmp": {                                              // Temperaturas en las cabezas de cada unidad. Considera:
+        "u1": [temp1,temp2,temp3],                              // Si los sensores son digitales el valor mostrado es su estado (0-Normal, 2-Alta), si son analógicos el valor es su temperatura en °C
+        "u2": [temp1,temp2,temp3],                              // Los array para todas las unidades tiene la misma cantidad de elementos que van desde 2 a 3.
+        ...,                                                        // El tipo de sensores y cantidad de sensores por unidad viene dado desde el esquema de configuracion "Inicial" mientras que los valores maximos de temperatura (umbral alto) de cada sensor esta en el esquema "Umbrales"
+        "un": [temp1,temp2,temp3]                               
+    },
+    "t_work": [t_1,t_2,...,t_n],                          // Tiempo de trabajo de cada unidad en segundos, parsear a hh:mm:ss
+    "sec_st": #                                           // Id del secador que esta activo. 0-Ninguno, 1/2-Secador no. 1/2, 3-Ambos  /!\ Solamente para secadores disecantes, en otro caso no se incluye este campo. El tipo de secador se especifica en el esquema "Inicial"
+}
+
+========= Parametros de Alertas del compresor =========
+{
+    "p_out": [p_out, p_out_st],                 // Alerta de presión en salida
+    "p_tank": [p_tank, p_tank_st],              // Alerta de presión en tanque
+    "p_rc": valor,                              // Alerta de Punto de rocio, se asume estado Alto
+    "co": valor,                                // Alerta en concentración de CO [valor], se asume estado Alto
+    "ret": true/false                           // Alerta de retardo
+    "tmp": {                                    // Alertas de temperatura, se asume estado Alto
+        "a1": [motor, sensor, val],             // Caso sensor analógico
+        "a2": [motor, sensor]                   // Caso sensor digital
+        ...,
+        "an": [motor, sensor, val]
+    },
+    "ol": [#,#,...]                             // Indice(s) de motores en sobrecarga [1,6]
+}
+
+========= Parametros de configuracion del compresor =========
+# Inicial (No cambia)
+{
+    "td": 3,
+    "tc": "init",               // Configuracion inicial e inmutable
+    "n_u": #,                   // Numero de unidades (motores)
+    "sec_typ": #,               // Tipo de secadores (0-Disecantes, 1-Refrigerativos)
+    "n_sens": #,                // Numero de sensores de temperatura
+    "sens_typ": #               // Tipo de sensores de temperatura (0-Digital, 1-Analogos)
+}
+
+# Umbrales    (Disponible para el usuario)
+{
+    "td": 3,                        
+    "tc": "th",                     
+    "out": [baja, alta],                // Umbrales de presion en la salida            
+    "tank": [baja, arranque, paro],     // Umbrales de presion en el tanque                    
+    "times": [ref, sil]                 // Tiempo de refuerzo en las unidades y tiempo de silenciado en las alarmas (minutos)
+    "pr_co": [pr_max, co_max]           // Limites de alta para el Punto de Rocio y CO
+    "temp_max":                         // Limites de alta para cada sensor de temperatura en cada unidad
+    {
+        "u1": [tmp1, tmp2, tmp3],       // Pueden tener desde 2 hasta 3 sensores, todas las unidades tienen la misma cantidad de sensores
+        "u2": [tmp1, tmp2, tmp3],
+        ... ,
+        "uN": [tmp1, tmp2, tmp3]
+    }
+}
+
+# Sensores                  (Disponible para el usuario Administrador (oculto) y Disponible para Regamsa)
+{
+    "td": 3,
+    "tc": "sens",
+    "out": [adc_min,adc_max,rango_psi],
+    "tank": [adc_min,adc_max,rango_psi],
+    "temp": {                                                   // "temp" se incluye solo si los sensores de temperatura son analógicos, se agrupan en cada una de sus unidades (todas las unidades llevan la misma cantidad de sensores)
+        "u1": {
+            "t_1":[adc_min,adc_max,rango_psi],
+            "t_2":[adc_min,adc_max,rango_psi],
+            "t_3":[adc_min,adc_max,rango_psi],
+        },
+        "u2": {
+            "t_1":[adc_min,adc_max,rango_psi],
+            "t_2":[adc_min,adc_max,rango_psi],
+            "t_3":[adc_min,adc_max,rango_psi],
+        }
+        ...,
+        "uN": {
+            "t_1":[adc_min,adc_max,rango_psi],
+            "t_2":[adc_min,adc_max,rango_psi],
+            "t_3":[adc_min,adc_max,rango_psi],
+        }
+    }
+}
+
+# Switch de Alertas         (Disponible para el usuario Administrador (oculto) y Disponible para Regamsa)
+{
+    "td": 3,
+    "tc": "alert",
+    "sw": #,                                         // Valor de 16 bits (2 Bytes) que almacena los 16 switches de alertas en cada bit: [temp | sob | resp | ret_err | p_sal | ret_all | ret_cam | p_rocio | co | co_mod | sec | act_buzz | ref_uni | alt_uni | history | protect_temp]. ##### Consultar tabla de excel para los detalles de cada parametro ######
+    "alpha": #,                                      // Compensador de filtro pasabajas de sensores en el compresor [0.000, 10.000] 
+    "niv_seg": #,                                    // Párametro para definir una alta presion en el tanque
+    "HMI_f": #,                                      // Frecuencia de actualizacion (ms) en el HMI
+    "dat_m": #,                                      // Retardo de solicitud a cada modulo (tiempo de espera de respuesta de esclavos)
+    "pet_m": #,                                      // Tiempo para solicitar datos a modulos esclavos del compresor
+    "pr_max": #,                                     // Alarma en el sensor de punto de rocio  
+    "co_max": #,                                     // Alarma en el sensor de CO              
+    "comp_pt": [#,#]                                 // Compensador de temperatura y humedad (ajuste de nivel de punto de rocio)
+
 Configs completas para compresor (ejemplo): 
 {
     "init":{
@@ -35,3 +133,20 @@ Configs completas para compresor (ejemplo):
         "comp_pt":[21,22]
     }
 }
+
+// Frame de datos del compresor
+// -------- Telemetría ---------
+typedef struct __attribute__((packed)) {
+  uint16_t p_out;                           // Presion de salida del compresor
+  uint8_t p_out_st;                         // Estado de la presion de salida 0-Normal, 1-Baja, 2-Alta
+  int16_t p_tank;                           // Presion del tanque del compresor
+  uint8_t p_tank_st;                        // Estado de la presion del tanque 0-Normal, 1-Baja, 2-Alta
+  int8_t p_rocio;                           // Punto de rocio [-60, 60]
+  uint8_t p_rocio_st;                       // Estado del Punto de rocio 0-Normal, 2-Alta
+  uint16_t co_ppm;                          // Concentracion de CO
+  uint8_t co_ppm_st;                        // Estado de concentracion de CO 0-Normal, 2-Alta
+  uint8_t unidad_st[MOTORS_MAX];            // Estado de las unidades 0-Normal, 1-En uso, 2-En espera amarillo, 3-En espera verde
+  uint16_t unidad_tmp[MOTORS_MAX][3][2];    // Temperaturas y su estado en las cabezas de cada unidad [temp, st] (si son digitales el estado no se usa)
+  uint32_t unidad_trb[MOTORS_MAX];          // Tiempo de trabajo de cada unidad [0, 360000000] segundos
+  uint8_t secador_st;                       // Id del secador que esta activo. 0-Ninguno, 1/2-Secador no. 1/2, 3-Ambos  /!\ Solamente para secadores disecantes
+} CompresorFrame;
