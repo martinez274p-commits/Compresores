@@ -5,6 +5,11 @@ def run():
     import math
     import mod485
     import app
+    import os
+
+    esp.osdebug(None)
+    os.dupterm(None, 0)
+
 
     MAX_MOTORS = 6
     MAX_SENS = 3
@@ -1074,4 +1079,4 @@ def run():
                     display.write_HMI("set_value","progress_bar",dir_roc[i],str(int(p_diff)))
                     #print("bar:",int(p_diff))
                 ciclo=0
-run()
+#run()

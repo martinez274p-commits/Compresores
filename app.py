@@ -2,12 +2,10 @@ import struct
 import mod485
 from time import sleep_ms
 from machine import UART, Pin
-import uos
-#esp.osdebug(None)
-uos.dupterm(None, 0)
+
 speed = 9600
 uart = UART(0, speed)
-uart.init(speed, bits=8, parity=None, rx= 26, tx=27,timeout=100)
+uart.init(speed, bits=8, parity=None, rx= 27, tx=26,timeout=100)
 
 def app_uart_available():
     return uart.any()
