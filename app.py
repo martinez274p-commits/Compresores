@@ -1,6 +1,27 @@
 import struct
 import mod485
 from time import sleep_ms
+from machine import UART, Pin
+
+speed = 9600
+uart = UART(0, speed)
+uart.init(speed, bits=8, parity=None, rx= 27, tx=26,timeout=100)
+
+def app_uart_available():
+    return uart.any()
+
+# Funciones para comuncacion con modulo MQTT
+def app_send_conf(packet):
+    uart.write(packet)
+
+def app_read_conf():
+    frame = uart.read()
+    print(f"Frame recibido (hex): {frame}")
+    if frame:
+        if int(frame[0])==0x7E:
+            print("[MQTT] - Recibido:",frame)
+            return frame
+    return bytes([])
 
 MOTORS_MAX = 6
 
@@ -254,7 +275,7 @@ def send_simple_command(type):
     if type == "red":
         payload = struct.pack("<B", CMD_SET_RED_ST)
         packet = build_packet(payload=payload, type_msg=1)
-        mod485.send_conf(packet)
+        app_send_conf(packet)
 
 def send_ack_nack(response):
     if response:
@@ -262,7 +283,7 @@ def send_ack_nack(response):
     else:
         payload = struct.pack("<B", CMD_NACK)
     packet = build_packet(payload=payload,type_msg=1)
-    mod485.send_conf(packet)
+    app_send_conf(packet)
 
 def process_command(data):
     try:

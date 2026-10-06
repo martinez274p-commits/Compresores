@@ -5,6 +5,10 @@ def run():
     import math
     import mod485
     import app
+    import os
+
+    esp.osdebug(None)
+    os.dupterm(None, 0)
 
 
     MAX_MOTORS = 6
@@ -215,9 +219,9 @@ def run():
             lastGetConnSt = ticks_ms()
             print("Verificacion de conexión ejecutada. \n")
 
-        if mod485.rs485_available():
+        if app.app_uart_available():
             print("Verificando mensajes entrantes...")
-            data_in = mod485.read_conf()
+            data_in = app.app_read_conf()
             if data_in and data_in[0] == 0x7E:
                 comando = app.process_command(data_in)
                 if isinstance(comando, dict):
@@ -298,7 +302,7 @@ def run():
                             secador_st=secadores_estado
                         )
                         packet = app.build_packet(payload=payload)
-                        mod485.send_conf(packet)
+                        app.app_send_conf(packet)
                     #### ==== Enviar Configuraciones ====
                     elif tipo == 'get_config_init':
                         '''
@@ -311,7 +315,7 @@ def run():
                             n_temp_sens=n_sens_per_unit
                         )
                         packet = app.build_packet(payload=payload)
-                        mod485.send_conf(packet)
+                        app.app_send_conf(packet)
                     elif tipo == 'get_config_th':
                         '''
                         Colocar codigo para enviar la configuracion de umbrales
@@ -325,7 +329,7 @@ def run():
                             temp_high=temps_hig
                         )
                         packet = app.build_packet(payload=payload)
-                        mod485.send_conf(packet)
+                        app.app_send_conf(packet)
                     elif tipo == 'get_config_sensors':
                         '''
                         Colocar codigo para enviar la configuracion de sensores
@@ -337,7 +341,7 @@ def run():
                             sensor_temp=sensor_temp_adc
                         )
                         packet = app.build_packet(payload=payload)
-                        mod485.send_conf(packet)
+                        app.app_send_conf(packet)
                     elif tipo == 'get_config_alerts':
                         '''
                         Colocar codigo para enviar la configuracion de alertas
@@ -356,7 +360,7 @@ def run():
                             comp_pt=[pt[23], pt[24]]
                         )
                         packet = app.build_packet(payload=payload)
-                        mod485.send_conf(packet)
+                        app.app_send_conf(packet)
                     #### ==== Guardar Configuraciones ====
                     elif tipo == 'cnf_th':
                         '''
