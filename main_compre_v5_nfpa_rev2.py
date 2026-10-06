@@ -5,11 +5,6 @@ def run():
     import math
     import mod485
     import app
-    import os
-
-    esp.osdebug(None)
-    os.dupterm(None, 0)
-
 
     MAX_MOTORS = 6
     MAX_SENS = 3
