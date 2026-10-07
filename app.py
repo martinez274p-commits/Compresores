@@ -12,28 +12,29 @@ deviceType = 3
 ETX = 0x7F
 
 # Comandos (BYTE_COMMAND)
-CMD_GET_DATA = 0x01      # Solicitar datos de monitoreo
-CMD_GET_CONFIG = 0x02    # Obtener configuración
-CMD_SET_CONFIG = 0x03    # Establecer configuración completa
-CMD_RESET_CONFIG = 0x04  # Resetear configuración
-CMD_EXPORT_CONFIG = 0x05 # Exportar configuración
-CMD_IMPORT_CONFIG = 0x06 # Importar configuración
-CMD_CALIBRAR = 0x07      # Calibrar sensor
-CMD_CONTROL_RELE = 0x10   # Control de relé
-CMD_CONTROL_BUZZER = 0x11 # Control de buzzer
-CMD_ACK = 0x7F           # Respuesta OK
-CMD_NACK = 0x7E          # Respuesta Error
+CMD_GET_DATA        = 0x01      # Solicitar datos de monitoreo
+CMD_GET_CONFIG      = 0x02    # Obtener configuración
+CMD_SET_CONFIG      = 0x03    # Establecer configuración completa
+CMD_RESET_CONFIG    = 0x04  # Resetear configuración
+CMD_EXPORT_CONFIG   = 0x05 # Exportar configuración
+CMD_IMPORT_CONFIG   = 0x06 # Importar configuración
+CMD_CALIBRAR        = 0x07      # Calibrar sensor
+CMD_CONTROL_RELE    = 0x10   # Control de relé
+CMD_CONTROL_BUZZER  = 0x11 # Control de buzzer
+CMD_ACK             = 0x7F           # Respuesta OK
+CMD_NACK            = 0x7E          # Respuesta Error
+CMD_SET_RED_ST      = 0x0C   # Estados de conexión y envío de datos
+CMD_GET_CALIB       = 0x0B  # Comando para enviar datos de calibracion (adc, presion) en lugar de datos de telemetria
+CMD_SET_CONFIG1     = 0x20 
+CMD_SET_CONFIG2     = 0x21 
+CMD_SET_CONFIG3     = 0x22 
+CMD_GET_CONFIG1     = 0x26
+CMD_GET_CONFIG2     = 0x27
+CMD_GET_CONFIG3     = 0x28
 
-CMD_SET_RED_ST = 0x0C   # Estados de conexión y envío de datos
-
-CMD_GET_CALIB = 0x0B  # Comando para enviar datos de calibracion (adc, presion) en lugar de datos de telemetria
-
-CMD_SET_CONFIG1 = 0x20 
-CMD_SET_CONFIG2 = 0x21 
-CMD_SET_CONFIG2 = 0x22 
-CMD_GET_CONFIG1 = 0x26
-CMD_GET_CONFIG2 = 0x27
-CMD_GET_CONFIG3 = 0x28
+# === NUEVOS: polling de pendientes ===
+CMD_PEND_COUNT     = 0x50   # Maestro -> Esclavo: ¿cuántos pendientes?
+CMD_PEND_READ      = 0x51   # Maestro -> Esclavo: dame el siguiente
 
 format_compr_data_tel = "<HBhBbBHB" + "B"*MOTORS_MAX + "H"*(MOTORS_MAX*6) + "I"*MOTORS_MAX + "B"
 format_compr_data_init = "<BBBBB"
@@ -250,11 +251,22 @@ def build_packet(payload, type_msg = 0):
         # Retornar un paquete mínimo en caso de error
         return bytes([STX, ver, typeM, deviceType, 0, 0, 0, ETX])
 
-def send_simple_command(type):
-    if type == "red":
-        payload = struct.pack("<B", CMD_SET_RED_ST)
-        packet = build_packet(payload=payload, type_msg=1)
-        mod485.send_conf(packet)
+def send_simple_command(cmd):
+    """
+    Envía un comando simple (sin payload) al esclavo.
+    cmd: puede ser un entero (byte) o el string "red" (compatibilidad).
+    """
+    if cmd == "red":
+        byte_cmd = CMD_SET_RED_ST
+    elif isinstance(cmd, int):
+        byte_cmd = cmd & 0xFF
+    else:
+        print(f"send_simple_command: cmd no soportado: {cmd}")
+        return
+
+    payload = struct.pack("<B", byte_cmd)
+    packet  = build_packet(payload=payload, type_msg=1)
+    mod485.send_conf(packet)
 
 def send_ack_nack(response):
     if response:
@@ -315,40 +327,55 @@ def procesar_comando_recibido(packet):
 def procesar_commando_especifico(byte_command, payload):
     #print(f'Comando recibido: 0x{byte_command:02X}')    
     try:
+        # ============ NUEVOS: respuestas al polling ============
+        if byte_command == CMD_PEND_COUNT:
+            # payload = [count]
+            cnt = payload[0] if len(payload) >= 1 else 0
+            return {'type': 'pend_count', 'count': int(cnt), 'cmd': byte_command}
+
+        if byte_command == CMD_PEND_READ:
+            # Si el payload está vacío => no había nada que enviar
+            if len(payload) == 0:
+                return {'type': 'pend_empty', 'cmd': byte_command}
+            # Si tiene datos, NO debería llegar aquí: el esclavo manda la
+            # trama cruda del mensaje pendiente, cuyo byte_command es el
+            # comando original (CMD_GET_DATA, CMD_CONTROL_BUZZER, etc.)
+            return {'type': 'pend_read', 'cmd': byte_command, 'payload': payload}
+        
         if byte_command == CMD_CONTROL_BUZZER:
             #print('Comando de Buzzer identificado: Aplicando ...')
-            return {'type': 'buzzer'}
+            return {'type': 'buzzer', 'cmd': byte_command}
         elif byte_command == CMD_GET_DATA:
             #print('Comando de envío de datos identificador: Enviando...')
-            return {'type': 'get_data'}
+            return {'type': 'get_data', 'cmd': byte_command}
         elif byte_command == CMD_GET_CONFIG:
-            return {'type': 'get_config_init'}
+            return {'type': 'get_config_init', 'cmd': byte_command}
         elif byte_command == CMD_GET_CONFIG1:
             #print('Comando de envío de configuración identificado: Enviando...')
-            return {'type': 'get_config_th'}
+            return {'type': 'get_config_th', 'cmd': byte_command}
         elif byte_command == CMD_GET_CONFIG2:
-            return {'type': 'get_config_sensors'}
+            return {'type': 'get_config_sensors', 'cmd': byte_command}
         elif byte_command == CMD_GET_CONFIG3:
-            return {'type': 'get_config_alerts'}
-        elif byte_command == CMD_GET_CONFIG or byte_command == CMD_GET_CONFIG1 or byte_command == CMD_GET_CONFIG2 or byte_command == CMD_GET_CONFIG3 or byte_command == CMD_SET_RED_ST:
+            return {'type': 'get_config_alerts', 'cmd': byte_command}
+        elif byte_command == CMD_SET_CONFIG or byte_command == CMD_SET_CONFIG1 or byte_command == CMD_SET_CONFIG2 or byte_command == CMD_SET_CONFIG3 or byte_command == CMD_SET_RED_ST:
             try:
                 payload_bytes = bytes(payload)
-                if byte_command == CMD_GET_CONFIG:
+                if byte_command == CMD_SET_CONFIG:
                     #return parse_comp_init(payload_bytes) # Descomentar esta linea si se requiere modificar la configuracion INIT
                     return {'type': 'warning', 'msg': 'No se tiene permitido modificar estos parametros'}
-                if byte_command == CMD_GET_CONFIG1:
+                if byte_command == CMD_SET_CONFIG1:
                     return parse_comp_thresholds(payload_bytes)
-                if byte_command == CMD_GET_CONFIG2:
+                if byte_command == CMD_SET_CONFIG2:
                     return parse_comp_sensors(payload_bytes)
-                if byte_command == CMD_GET_CONFIG3:
+                if byte_command == CMD_SET_CONFIG3:
                     return parse_comp_alerts(payload_bytes)
                 if byte_command == CMD_SET_RED_ST:
                     return parse_comm_st(payload_bytes)
             except Exception as e:
-                return {'type': 'error', 'msg': f'Error procesando payload: {str(e)}'}
+                return {'type': 'error', 'msg': f'Error procesando payload: {str(e)}', 'cmd': byte_command}
         else:
             #print('Comando no reconocido')
-            return {'type': 'error', 'msg': 'Comando desconocido'}
+            return {'type': 'error', 'msg': 'Comando desconocido', 'cmd': byte_command}
     except Exception as e:
         print(f'Error al procesar el comando especifico: {str(e)}')
         return {'type': 'error', 'msg': str(e)}
@@ -404,6 +431,7 @@ def parse_comp_init(data: bytes):
             "typ_secadores": typ_secadores,     # Escalar
             "typ_temp_sens": typ_temp_sens,     # Escalar
             "n_temp_sens": n_temp_sens,         # Escalar
+            'cmd': CMD_SET_CONFIG
         }
     except Exception as e:
         return {'type': 'error', 'msg': f'[INIT] Error al desempaquetar: {str(e)}'}
@@ -439,6 +467,7 @@ def parse_comp_thresholds(data: bytes):
             "th_p_tank": th_p_tank,     # Arreglo [3]
             "time_ref": time_ref,       # Escalar
             "time_sil": time_sil,       # Escalar
+            'cmd': CMD_SET_CONFIG1
         }
     except Exception as e:
         return {'type': 'error', 'msg': f'[TH] Error al desempaquetar: {str(e)}'}
@@ -471,6 +500,7 @@ def parse_comp_sensors(data: bytes):
             "sensor_out": sensor_out,       # Arreglo [3]
             "sensor_tank": sensor_tank,     # Arreglo [3]
             "sensor_temp": sensor_temp,     # Arreglo [6][3][3]
+            'cmd': CMD_SET_CONFIG2
         }
     except Exception as e:
         return {'type': 'error', 'msg': f'[SENS] Error al desempaquetar: {str(e)}'}
@@ -496,6 +526,7 @@ def parse_comp_alerts(data: bytes):
             "pt_max": pt_max,
             "co_max": co_max,
             "comp_pt": [comp_pt0, comp_pt1],
+            'cmd': CMD_SET_CONFIG3
         }
     except Exception as e:
         return {'type': 'error', 'msg': f'[ALERT] Error al desempaquetar: {str(e)}'}
@@ -513,7 +544,8 @@ def parse_comm_st(data: bytes):
         return {
             'type': 'red_st',
             'wifi': wifi_st,
-            'mqtt': mqtt_st
+            'mqtt': mqtt_st,
+            'cmd': CMD_SET_RED_ST
         }
     except Exception as e:
         return {'type': 'error', 'msg': f'[COMM_ST] Error al desempaquetar: {str(e)}'}
