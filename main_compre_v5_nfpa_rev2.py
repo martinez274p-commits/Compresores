@@ -1015,10 +1015,10 @@ def run():
             alerta[14]=1 if punto_rocio>pt[21] and pt[7]==1 else 0
             alerta[15]=1 if mono>pt[22] and pt[8]==1 else 0
             
-            temperaturas_monitoreo[0][0][1] = alerta[0] 
-            temperaturas_monitoreo[0][1][1] = alerta[1] 
-            temperaturas_monitoreo[1][0][1] = alerta[23]
-            temperaturas_monitoreo[1][1][1] = alerta[24]
+            temperaturas_monitoreo[0][0][1] = 2 if alerta[0]  == 0 else 0
+            temperaturas_monitoreo[0][1][1] = 2 if alerta[1]  == 0 else 0
+            temperaturas_monitoreo[1][0][1] = 2 if alerta[23] == 0 else 0
+            temperaturas_monitoreo[1][1][1] = 2 if alerta[24] == 0 else 0
             if alerta[8]==1:
                 est_pre[0]=1
             if alerta[9]==1:
