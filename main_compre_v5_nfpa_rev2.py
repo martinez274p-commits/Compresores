@@ -893,7 +893,7 @@ def run():
                     PIN=PIN1+PIN2
                     cont_pub_estado=cont_pub_estado+1
                     #print(cont_pub_estado)
-                    if cont_pub_estado>4:
+                    if cont_pub_estado>8:
                         cont_pub_estado=0
                         print("estados pines",PIN)
                         timings=[timing1,timing2]  
